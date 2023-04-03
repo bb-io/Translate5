@@ -1,0 +1,16 @@
+{
+  "definition": [
+    {
+      "name": "url",
+      "description": "Url to your Translate5 instance"
+    },
+    {
+      "name": "apiKey",
+      "description": "Your API token to access Translate5"
+    }
+  ],
+  "communicationWrapperType": "HttpWrapper",
+  "authenticationType": null,
+  "authenticationDefition": null,
+  "authenticationResponseMapping": null
+}
