@@ -27,11 +27,72 @@ namespace Apps.Translate5.Actions
                 Method.Get, authenticationCredentialsProvider);
             dynamic content = JsonConvert.DeserializeObject(tr5Client.Get(request).Content);
             JArray tasksArray = content.rows;
-            var projects = tasksArray.ToObject<List<TaskDto>>();
+            var tasks = tasksArray.ToObject<List<TaskDto>>();
             return new AllTasksResponse()
             {
-                Tasks = projects
+                Tasks = tasks
             };
+        }
+
+        [Action("Get task", Description = "Get task by Id")]
+        public GetTaskResponse GetTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+           [ActionParameter] GetTaskRequest input)
+        {
+            var tr5Client = new Translate5Client(url);
+            var request = new Translate5Request($"/editor/task/{input.Id}",
+                Method.Get, authenticationCredentialsProvider);
+            dynamic content = JsonConvert.DeserializeObject(tr5Client.Get(request).Content);
+            JObject tasksArray = content.rows;
+            var task = tasksArray.ToObject<TaskDto>();
+            return new GetTaskResponse()
+            {
+                Id = task.Id,
+                Name = task.TaskName
+            };
+        }
+
+        [Action("Create task", Description = "Create new task")]
+        public void CreateTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+           [ActionParameter] CreateTaskRequest input)
+        {
+            var tr5Client = new Translate5Client(url);
+            var request = new Translate5Request($"/editor/task",
+                Method.Post, authenticationCredentialsProvider);
+            request.AlwaysMultipartFormData = true;
+
+            request.AddParameter("taskName", input.TaskName);
+            request.AddParameter("sourceLang", input.SourceLanguage);
+            request.AddParameter("targetLang", input.TargetLanguage);
+
+            request.AddFile("importUpload", input.File, input.FileName, input.FileType);
+            tr5Client.Execute(request);
+        }
+
+        /* PUT requests not working
+        [Action("Change task name", Description = "Change task name")]
+        public void ChangeTaskName(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+           [ActionParameter] ChangeTaskNameRequest input)
+        {
+            var tr5Client = new Translate5Client(url);
+            var request = new Translate5Request($"/editor/task/{input.TaskId}", Method.Put, authenticationCredentialsProvider);
+            request.AddJsonBody(new
+            {
+                taskName = input.NewName
+            });
+            tr5Client.Execute(request);
+        }
+        */
+
+
+        [Action("Delete task", Description = "Delete task")]
+        public void DeleteTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+           [ActionParameter] DeleteTaskRequest input)
+        {
+            var tr5Client = new Translate5Client(url);
+            var request = new Translate5Request($"/editor/task/{input.Id}",
+                Method.Delete, authenticationCredentialsProvider);
+
+            tr5Client.Execute(request);
         }
     }
 }

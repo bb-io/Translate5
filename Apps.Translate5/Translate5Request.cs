@@ -15,5 +15,11 @@ namespace Apps.Translate5
             this.AddHeader("Translate5AuthToken", authenticationCredentialsProvider.Value);
             this.AddHeader("Accept", "application/json");
         }
+
+        public Translate5Request(string endpoint, Method method, string zfExtendedCookie, string url) : base(endpoint, method)
+        {
+            this.AddCookie("zfExtended", zfExtendedCookie, "/", new Uri(url).Host);
+            this.AddHeader("Accept", "application/json");
+        }
     }
 }
