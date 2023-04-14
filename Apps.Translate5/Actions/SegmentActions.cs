@@ -20,7 +20,7 @@ namespace Apps.Translate5.Actions
         public ListSegmentsResponse ListSegments(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] ListSegmentsRequest input)
         {
-            var sessionId = GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
+            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
             var request = new Translate5Request($"/editor/taskid/{input.TaskId}/segment?start={input.StartIndex}&limit={input.Limit}",
                 Method.Get, sessionId, url);
@@ -34,7 +34,7 @@ namespace Apps.Translate5.Actions
         public SegmentDto GetSegment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] GetSegmentRequest input)
         {
-            var sessionId = GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
+            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
             var request = new Translate5Request($"/editor/taskid/{input.TaskId}/segment?id={input.SegmentId}",
                 Method.Get, sessionId, url);
@@ -46,7 +46,7 @@ namespace Apps.Translate5.Actions
         public SearchSegmentResponse SearchSegments(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] SearchSegmentRequest input)
         {
-            var sessionId = GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
+            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
             var request = new Translate5Request($"/editor/taskid/{input.TaskId}/segment/search",
                 Method.Get, sessionId, url);
@@ -65,7 +65,7 @@ namespace Apps.Translate5.Actions
         public void TranslateSegment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] TranslateSegmentRequest input)
         {
-            var sessionId = GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
+            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
             var request = new Translate5Request($"/editor/taskid/{input.TaskId}/segment/{input.SegmentId}",
                 Method.Put, sessionId, url);
@@ -76,18 +76,6 @@ namespace Apps.Translate5.Actions
             tr5Client.Execute(request);
         }
 
-        private string GetSessionWithEditableTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider, 
-            string taskId)
-        {
-            var tr5Client = new Translate5Client(url);
-            var request = new Translate5Request($"/editor/task/{taskId}",
-                Method.Put, authenticationCredentialsProvider);
-            request.AddParameter("data", JsonConvert.SerializeObject(new
-            {
-                userState = "edit"
-            }));
-            var response = tr5Client.Execute(request);
-            return response.Cookies.Where(c => c.Name == "zfExtended").First().Value;
-        }
+        
     }
 }
