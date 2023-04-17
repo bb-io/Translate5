@@ -34,7 +34,7 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Create comment", Description = "Create comment")]
-        public void CreateComment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public CommentDto CreateComment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] CreateCommentRequest input)
         {
             var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
@@ -46,7 +46,7 @@ namespace Apps.Translate5.Actions
                 segmentId = input.SegmentId,
                 comment = input.Comment
             }));
-            tr5Client.Execute(request);
+            return tr5Client.Execute<ResponseWrapper<CommentDto>>(request).Data.Rows;
         }
 
         [Action("Delete comment", Description = "Delete comment")]

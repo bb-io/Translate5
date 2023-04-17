@@ -43,7 +43,7 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Create task", Description = "Create new task")]
-        public void CreateTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public TaskDto CreateTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
            [ActionParameter] CreateTaskRequest input)
         {
             var tr5Client = new Translate5Client(url);
@@ -56,12 +56,12 @@ namespace Apps.Translate5.Actions
             request.AddParameter("targetLang", input.TargetLanguage);
 
             request.AddFile("importUpload", input.File, input.FileName, input.FileType);
-            tr5Client.Execute(request);
+            return tr5Client.Execute<ResponseWrapper<TaskDto>>(request).Data.Rows;
         }
 
        
         [Action("Change task name", Description = "Change task name")]
-        public void ChangeTaskName(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public TaskDto ChangeTaskName(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
            [ActionParameter] ChangeTaskNameRequest input)
         {
             var tr5Client = new Translate5Client(url);
@@ -70,7 +70,7 @@ namespace Apps.Translate5.Actions
             {
                 taskName = input.NewName
             }));
-            tr5Client.Execute(request);
+            return tr5Client.Execute<ResponseWrapper<TaskDto>>(request).Data.Rows;
         }
 
         [Action("Delete task", Description = "Delete task")]

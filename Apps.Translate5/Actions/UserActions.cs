@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Apps.Translate5.Models.Users.Responses;
 using Apps.Translate5.Models.Users.Requests;
+using Apps.Translate5.Models;
 
 namespace Apps.Translate5.Actions
 {
@@ -26,12 +27,9 @@ namespace Apps.Translate5.Actions
             var tr5Client = new Translate5Client(url);
             var request = new Translate5Request($"/editor/user",
                 Method.Get, authenticationCredentialsProvider);
-            dynamic content = JsonConvert.DeserializeObject(tr5Client.Get(request).Content);
-            JArray usersArray = content.rows;
-            var users = usersArray.ToObject<List<UserDto>>();
             return new AllUsersResponse()
             {
-                Users = users
+                Users = tr5Client.Get<ResponseWrapper<List<UserDto>>>(request).Rows
             };
         }
     }
