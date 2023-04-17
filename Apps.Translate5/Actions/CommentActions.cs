@@ -23,10 +23,9 @@ namespace Apps.Translate5.Actions
         public ListCommentsResponse ListComments(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] ListCommentsRequest input)
         {
-            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
-            var request = new Translate5Request($"/editor/taskid/{input.TaskId}/comment?segmentId={input.SegmentId}",
-                Method.Get, sessionId, url);
+            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment?segmentId={input.SegmentId}",
+                Method.Get, authenticationCredentialsProvider, url, input.TaskId);
             return new ListCommentsResponse()
             {
                 Comments = tr5Client.Get<ResponseWrapper<List<CommentDto>>>(request).Rows
@@ -37,10 +36,9 @@ namespace Apps.Translate5.Actions
         public CommentDto CreateComment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] CreateCommentRequest input)
         {
-            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
-            var request = new Translate5Request($"/editor/taskid/{input.TaskId}/comment",
-                Method.Post, sessionId, url);
+            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment",
+                Method.Post, authenticationCredentialsProvider, url, input.TaskId);
             request.AddParameter("data", JsonConvert.SerializeObject(new
             {
                 segmentId = input.SegmentId,
@@ -53,10 +51,8 @@ namespace Apps.Translate5.Actions
         public void DeleteComment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
             [ActionParameter] DeleteCommentRequest input)
         {
-            var sessionId = Translate5Request.GetSessionWithEditableTask(url, authenticationCredentialsProvider, input.TaskId);
             var tr5Client = new Translate5Client(url);
-            var request = new Translate5Request($"/editor/taskid/{input.TaskId}/comment/{input.CommentId}",
-                Method.Delete, sessionId, url);
+            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment/{input.CommentId}", Method.Delete, authenticationCredentialsProvider, url, input.TaskId);
             tr5Client.Execute(request);
         }
     }
