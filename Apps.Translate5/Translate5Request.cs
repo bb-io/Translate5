@@ -11,9 +11,10 @@ namespace Apps.Translate5
 {
     public class Translate5Request : RestRequest
     {
-        public Translate5Request(string endpoint, Method method, AuthenticationCredentialsProvider authenticationCredentialsProvider) : base(endpoint, method)
+        public Translate5Request(string endpoint, Method method, IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders) : base(endpoint, method)
         {
-            this.AddHeader("Translate5AuthToken", authenticationCredentialsProvider.Value);
+            var key = authenticationCredentialsProviders.First(p => p.KeyName == "apiKey").Value;
+            this.AddHeader("Translate5AuthToken", key);
             this.AddHeader("Accept", "application/json");
         }
     }

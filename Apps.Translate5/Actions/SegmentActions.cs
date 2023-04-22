@@ -9,6 +9,7 @@ using RestSharp;
 using Apps.Translate5.Models.Segments.Requests;
 using Apps.Translate5.Models.Segments.Responses;
 using Apps.Translate5.Models;
+using Blackbird.Applications.Sdk.Common.Actions;
 
 namespace Apps.Translate5.Actions
 {
@@ -17,11 +18,11 @@ namespace Apps.Translate5.Actions
     {
 
         [Action("List segments for task", Description = "List segments for task")]
-        public ListSegmentsResponse ListSegments(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public ListSegmentsResponse ListSegments(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] ListSegmentsRequest input)
         {
-            var tr5Client = new Translate5Client(url);
-            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment?start={input.StartIndex}&limit={input.Limit}", Method.Get, authenticationCredentialsProvider, url, input.TaskId);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
+            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment?start={input.StartIndex}&limit={input.Limit}", Method.Get, authenticationCredentialsProviders, input.TaskId);
             return new ListSegmentsResponse()
             {
                 Segments = tr5Client.Get<ResponseWrapper<List<SegmentDto>>>(request).Rows
@@ -29,22 +30,22 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Get segment", Description = "Get segment by Id")]
-        public SegmentDto GetSegment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public SegmentDto GetSegment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] GetSegmentRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment?id={input.SegmentId}",
-                Method.Get, authenticationCredentialsProvider, url, input.TaskId);
+                Method.Get, authenticationCredentialsProviders, input.TaskId);
 
             return tr5Client.Get<ResponseWrapper<SegmentDto>>(request).Rows;
         }
 
         [Action("Search segments", Description = "Search segments in task")]
-        public SearchSegmentResponse SearchSegments(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public SearchSegmentResponse SearchSegments(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] SearchSegmentRequest input)
         {
-            var tr5Client = new Translate5Client(url);
-            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment/search", Method.Get, authenticationCredentialsProvider, url, input.TaskId);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
+            var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment/search", Method.Get, authenticationCredentialsProviders, input.TaskId);
 
             request.AddParameter("taskGuid", input.TaskGuid);
             request.AddParameter("searchField", input.SearchFieldValue);
@@ -57,12 +58,12 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Translate segment", Description = "Translate segment")]
-        public void TranslateSegment(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public void TranslateSegment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] TranslateSegmentRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment/{input.SegmentId}",
-                Method.Put, authenticationCredentialsProvider, url, input.TaskId);
+                Method.Put, authenticationCredentialsProviders, input.TaskId);
             request.AddParameter("data", JsonConvert.SerializeObject(new
             {
                 targetEdit = input.Translation

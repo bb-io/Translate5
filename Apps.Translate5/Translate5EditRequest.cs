@@ -11,11 +11,12 @@ namespace Apps.Translate5
 {
     public class Translate5EditRequest : RestRequest
     {
-        public Translate5EditRequest(string endpoint, Method method, AuthenticationCredentialsProvider authenticationCredentialsProvider, string url, string taskId) : base(endpoint, method)
+        public Translate5EditRequest(string endpoint, Method method, IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders, string taskId) : base(endpoint, method)
         {
-            var tr5Client = new Translate5Client(url);
+            var url = authenticationCredentialsProviders.First(p => p.KeyName == "url").Value;
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task/{taskId}",
-                Method.Put, authenticationCredentialsProvider);
+                Method.Put, authenticationCredentialsProviders);
             request.AddParameter("data", JsonConvert.SerializeObject(new
             {
                 userState = "edit"

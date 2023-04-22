@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using Apps.Translate5.Models.Users.Responses;
 using Apps.Translate5.Models.Users.Requests;
 using Apps.Translate5.Models;
+using Blackbird.Applications.Sdk.Common.Actions;
 
 namespace Apps.Translate5.Actions
 {
@@ -21,12 +22,12 @@ namespace Apps.Translate5.Actions
     public class UserActions
     {
         [Action("List all users", Description = "List all users")]
-        public AllUsersResponse ListAllUsers(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public AllUsersResponse ListAllUsers(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] AllUsersRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/user",
-                Method.Get, authenticationCredentialsProvider);
+                Method.Get, authenticationCredentialsProviders);
             return new AllUsersResponse()
             {
                 Users = tr5Client.Get<ResponseWrapper<List<UserDto>>>(request).Rows

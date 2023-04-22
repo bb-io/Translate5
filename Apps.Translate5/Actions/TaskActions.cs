@@ -4,6 +4,7 @@ using Apps.Translate5.Models;
 using Apps.Translate5.Models.Tasks.Requests;
 using Apps.Translate5.Models.Tasks.Responses;
 using Blackbird.Applications.Sdk.Common;
+using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Authentication;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -15,12 +16,12 @@ namespace Apps.Translate5.Actions
     public class TaskActions
     {
         [Action("List all tasks", Description = "List all tasks")]
-        public AllTasksResponse ListAllTasks(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public AllTasksResponse ListAllTasks(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
             [ActionParameter] AllTasksRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task?start={input.StartIndex}&limit={input.Limit}", 
-                Method.Get, authenticationCredentialsProvider);
+                Method.Get, authenticationCredentialsProviders);
             return new AllTasksResponse()
             {
                 Tasks = tr5Client.Get<ResponseWrapper<List<TaskDto>>>(request).Rows
@@ -28,12 +29,12 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Get task", Description = "Get task by Id")]
-        public GetTaskResponse GetTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public GetTaskResponse GetTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
            [ActionParameter] GetTaskRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task/{input.Id}",
-                Method.Get, authenticationCredentialsProvider);
+                Method.Get, authenticationCredentialsProviders);
             var task = tr5Client.Get<ResponseWrapper<TaskDto>>(request).Rows;
             return new GetTaskResponse()
             {
@@ -43,12 +44,12 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Create task", Description = "Create new task")]
-        public TaskDto CreateTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public TaskDto CreateTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
            [ActionParameter] CreateTaskRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task",
-                Method.Post, authenticationCredentialsProvider);
+                Method.Post, authenticationCredentialsProviders);
             request.AlwaysMultipartFormData = true;
 
             request.AddParameter("taskName", input.TaskName);
@@ -61,11 +62,11 @@ namespace Apps.Translate5.Actions
 
        
         [Action("Change task name", Description = "Change task name")]
-        public TaskDto ChangeTaskName(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public TaskDto ChangeTaskName(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
            [ActionParameter] ChangeTaskNameRequest input)
         {
-            var tr5Client = new Translate5Client(url);
-            var request = new Translate5Request($"/editor/task/{input.TaskId}", Method.Put, authenticationCredentialsProvider);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
+            var request = new Translate5Request($"/editor/task/{input.TaskId}", Method.Put, authenticationCredentialsProviders);
             request.AddParameter("data", JsonConvert.SerializeObject(new
             {
                 taskName = input.NewName
@@ -74,23 +75,23 @@ namespace Apps.Translate5.Actions
         }
 
         [Action("Delete task", Description = "Delete task")]
-        public void DeleteTask(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public void DeleteTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
            [ActionParameter] DeleteTaskRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task/{input.Id}",
-                Method.Delete, authenticationCredentialsProvider);
+                Method.Delete, authenticationCredentialsProviders);
 
             tr5Client.Execute(request);
         }
 
         [Action("Export translated file", Description = "Export translated file by task Id")]
-        public ExportTaskFileResponse ExportTaskFile(string url, AuthenticationCredentialsProvider authenticationCredentialsProvider,
+        public ExportTaskFileResponse ExportTaskFile(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
            [ActionParameter] GetTaskRequest input)
         {
-            var tr5Client = new Translate5Client(url);
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
             var request = new Translate5Request($"/editor/task/export/id/{input.Id}?format=filetranslation",
-                Method.Get, authenticationCredentialsProvider);
+                Method.Get, authenticationCredentialsProviders);
             var response = tr5Client.Get(request);
 
             var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
