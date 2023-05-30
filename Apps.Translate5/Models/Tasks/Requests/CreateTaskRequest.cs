@@ -16,8 +16,6 @@ namespace Apps.Translate5.Models.Tasks.Requests
 
         public string FileName { get; set; }  //example: test.txt
 
-        public string FileType { get; set; }
-
         public byte[] File { get; set; }
     }
 }

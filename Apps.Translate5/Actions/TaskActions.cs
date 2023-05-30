@@ -56,7 +56,7 @@ namespace Apps.Translate5.Actions
             request.AddParameter("sourceLang", input.SourceLanguage);
             request.AddParameter("targetLang", input.TargetLanguage);
 
-            request.AddFile("importUpload", input.File, input.FileName, input.FileType);
+            request.AddFile("importUpload", input.File, input.FileName);
             return tr5Client.Execute<ResponseWrapper<TaskDto>>(request).Data.Rows;
         }
 
