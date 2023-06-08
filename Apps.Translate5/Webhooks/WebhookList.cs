@@ -23,6 +23,21 @@ namespace Apps.Translate5.Webhooks
                 HttpResponseMessage = null,
                 Result = data
             };
-        }    
+        }
+
+        [Webhook("On tasks finished", Description = "On tasks finished")]
+        public async Task<WebhookResponse<TaskImportPayload>> TaskImportFinishedS(WebhookRequest webhookRequest)
+        {
+            var data = JsonConvert.DeserializeObject<TaskImportPayload>(webhookRequest.Body.ToString());
+            if (data is null)
+            {
+                throw new InvalidCastException(nameof(webhookRequest.Body));
+            }
+            return new WebhookResponse<TaskImportPayload>
+            {
+                HttpResponseMessage = null,
+                Result = data
+            };
+        }
     }
 }
