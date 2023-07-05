@@ -8,11 +8,11 @@ namespace Apps.Translate5.Webhooks.Payload
 {
     public class TaskImportPayload
     {
-        public Task Task { get; set; }
-        public List<Tua> Tua { get; set; }
+        public TaskObj Task { get; set; }
+        //public List<Tua> Tua { get; set; }
     }
 
-    public class Task
+    public class TaskObj
     {
         public string Id { get; set; }
         public string EntityVersion { get; set; }
