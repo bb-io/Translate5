@@ -25,7 +25,7 @@ namespace Apps.Translate5.Webhooks
             };
         }
 
-        [Webhook("On tasks finished", Description = "On tasks finished")]
+        [Webhook("On task finished", Description = "On task finished")]
         public async Task<WebhookResponse<TaskImportPayload>> TaskImportFinishedS(WebhookRequest webhookRequest)
         {
             var data = JsonConvert.DeserializeObject<TaskImportPayload>(webhookRequest.Body.ToString());

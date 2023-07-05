@@ -8,6 +8,12 @@ namespace Apps.Translate5.Webhooks.Payload
 {
     public class TaskImportPayload
     {
+        public Task Task { get; set; }
+        public List<Tua> Tua { get; set; }
+    }
+
+    public class Task
+    {
         public string Id { get; set; }
         public string EntityVersion { get; set; }
         public string Modified { get; set; }
@@ -45,5 +51,23 @@ namespace Apps.Translate5.Webhooks.Payload
         public string Reimportable { get; set; }
         public string Description { get; set; }
         public string Created { get; set; }
+    }
+
+    public class Tua
+    {
+        public string Id { get; set; }
+        public string TaskGuid { get; set; }
+        public string UserGuid { get; set; }
+        public string State { get; set; }
+        public string Role { get; set; }
+        public string WorkflowStepName { get; set; }
+        public string Workflow { get; set; }
+        public string Segmentrange { get; set; }
+        public string IsPmOverride { get; set; }
+        public object DeadlineDate { get; set; }
+        public string AssignmentDate { get; set; }
+        public string TrackchangesShow { get; set; }
+        public string TrackchangesShowAll { get; set; }
+        public string TrackchangesAcceptReject { get; set; }
     }
 }
