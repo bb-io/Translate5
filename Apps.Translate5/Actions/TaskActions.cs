@@ -9,6 +9,7 @@ using Blackbird.Applications.Sdk.Common.Authentication;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using RestSharp;
+using System.IO.Compression;
 
 namespace Apps.Translate5.Actions
 {
@@ -102,6 +103,34 @@ namespace Apps.Translate5.Actions
                 Filename = filename,
                 File = response.RawBytes
             };
+        }
+
+        [Action("Create task from ZIP", Description = "Create task from ZIP")]
+        public TaskDto CreateTaskFromZIP(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+           [ActionParameter] CreateTaskFromZipRequest input)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+                {
+                    foreach(var workfile in input.Workfiles)
+                    {
+                        var workfileTarget = archive.CreateEntry($"workfiles/{workfile.Filename}");
+                        using (var entryStream = workfileTarget.Open())
+                        {
+                            entryStream.Write(workfile.File, 0, workfile.File.Length);
+                        }
+                    }
+                }
+                return CreateTask(authenticationCredentialsProviders, new CreateTaskRequest()
+                {
+                    SourceLanguage = input.SourceLanguage,
+                    TargetLanguage = input.TargetLanguage,
+                    TaskName = input.TaskName,
+                    FileName = "import.zip",
+                    File = memoryStream.ToArray()
+                });
+            }
         }
     }
 }
