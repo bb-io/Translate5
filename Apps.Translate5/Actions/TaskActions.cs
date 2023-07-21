@@ -115,10 +115,13 @@ namespace Apps.Translate5.Actions
                 {
                     foreach(var workfile in input.Workfiles)
                     {
-                        var workfileTarget = archive.CreateEntry($"workfiles/{workfile.Filename}");
-                        using (var entryStream = workfileTarget.Open())
+                        AddFileToZip("workfiles", workfile, archive);
+                    }
+                    if(input.Images != null)
+                    {
+                        foreach (var image in input.Images)
                         {
-                            entryStream.Write(workfile.File, 0, workfile.File.Length);
+                            AddFileToZip("visual/image", image, archive);
                         }
                     }
                 }
@@ -130,6 +133,15 @@ namespace Apps.Translate5.Actions
                     FileName = "import.zip",
                     File = memoryStream.ToArray()
                 });
+            }
+        }
+
+        private void AddFileToZip(string folderPath, FileData file, ZipArchive archive)
+        {
+            var workfileTarget = archive.CreateEntry($"{folderPath}/{file.Filename}");
+            using (var entryStream = workfileTarget.Open())
+            {
+                entryStream.Write(file.File, 0, file.File.Length);
             }
         }
     }
