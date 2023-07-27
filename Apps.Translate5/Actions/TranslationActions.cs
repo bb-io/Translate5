@@ -12,6 +12,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Apps.Translate5.Models.Translations.Requests;
 using Newtonsoft.Json.Linq;
+using System.Net.Http.Headers;
+using Apps.Translate5.Models.Translations.Response;
 
 namespace Apps.Translate5.Actions
 {
@@ -39,6 +41,34 @@ namespace Apps.Translate5.Actions
             }
             var translations = intantTranslateResponse.First.First[input.LanguageResource].First.First.ToArray();
             return translations.First().ToObject<TranslationTextDto>();
+        }
+
+        [Action("Translate a file with translate5 language resources", Description = "Translate a file with translate5 language resources")]
+        public TranslateFileResponse TranslateFile(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+           [ActionParameter] TranslateFileRequest input)
+        {
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
+            var sessionCookie = tr5Client.GetSessionCookie(authenticationCredentialsProviders);
+            var request = new Translate5Request($"/editor/instanttranslateapi/filepretranslate",
+                Method.Post, authenticationCredentialsProviders, sessionCookie);
+            request.AlwaysMultipartFormData = true;
+
+            request.AddParameter("source", input.SourceLanguage);
+            request.AddParameter("target", input.TargetLanguage);
+            request.AddFile("file", input.File, input.Filename);
+            var taskId = tr5Client.Execute<TaskIdDto>(request).Data;
+
+            var downloadUrl = tr5Client.PollFileInstantTranslation(authenticationCredentialsProviders, taskId.TaskId, sessionCookie);
+
+            var downloadRequest = new Translate5Request(downloadUrl.Replace("\\", ""), Method.Get, authenticationCredentialsProviders, sessionCookie);
+            var translatedFileResponse = tr5Client.Get(downloadRequest);
+
+            var filename = ContentDispositionHeaderValue.Parse(translatedFileResponse.ContentHeaders.First(h => h.Name == "Content-Disposition").Value.ToString()).FileName;
+            return new TranslateFileResponse()
+            {
+                File = translatedFileResponse.RawBytes,
+                Filename = filename
+            };
         }
     }
 }
