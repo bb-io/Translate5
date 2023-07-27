@@ -14,6 +14,7 @@ using Apps.Translate5.Models.Translations.Requests;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using Apps.Translate5.Models.Translations.Response;
+using Newtonsoft.Json;
 
 namespace Apps.Translate5.Actions
 {
@@ -69,6 +70,18 @@ namespace Apps.Translate5.Actions
                 File = translatedFileResponse.RawBytes,
                 Filename = filename
             };
+        }
+
+        [Action("Write translation memory into OpenTM2", Description = "Write translation memory into OpenTM2")]
+        public void WriteTranslationMemory(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+           [ActionParameter] WriteTranslationMemoryRequest input)
+        {
+            var tr5Client = new Translate5Client(authenticationCredentialsProviders);
+            var request = new Translate5Request($"editor/instanttranslateapi/writetm", Method.Post, authenticationCredentialsProviders);
+            request.AlwaysMultipartFormData = true;
+
+            request.AddParameter("data", JsonConvert.SerializeObject(input));
+            tr5Client.Execute(request);
         }
     }
 }
