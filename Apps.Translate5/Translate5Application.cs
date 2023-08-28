@@ -1,23 +1,17 @@
 ﻿using Blackbird.Applications.Sdk.Common;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Apps.Translate5
+namespace Apps.Translate5;
+
+public class Translate5Application : IApplication
 {
-    public class Translate5Application : IApplication
+    public string Name
     {
-        public string Name
-        {
-            get => "Translate5";
-            set { }
-        }
+        get => "Translate5";
+        set { }
+    }
 
-        public T GetInstance<T>()
-        {
-            throw new NotImplementedException();
-        }
+    public T GetInstance<T>()
+    {
+        throw new NotImplementedException();
     }
 }
