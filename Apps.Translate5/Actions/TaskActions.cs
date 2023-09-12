@@ -1,107 +1,100 @@
-﻿using Apps.Translate5.Dtos;
-using Apps.Translate5.Models;
-using Apps.Translate5.Models.Tasks.Requests;
-using Apps.Translate5.Models.Tasks.Responses;
+﻿using Apps.Translate5.Models;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
-using Blackbird.Applications.Sdk.Common.Authentication;
-using Newtonsoft.Json;
 using RestSharp;
 using System.IO.Compression;
 using System.Net.Mime;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
+using Apps.Translate5.Api;
+using Apps.Translate5.Extensions;
+using Apps.Translate5.Invocables;
+using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Request.Tasks;
+using Apps.Translate5.Models.Response;
+using Apps.Translate5.Models.Response.Tasks;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
-public class TaskActions
+public class TaskActions : Translate5Invocable
 {
-    [Action("List all tasks", Description = "List all tasks")]
-    public AllTasksResponse ListAllTasks(
-        IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] AllTasksRequest input)
+    public TaskActions(InvocationContext invocationContext) : base(invocationContext)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task?start={input.StartIndex}&limit={input.Limit}",
-            Method.Get, authenticationCredentialsProviders);
-        return new AllTasksResponse()
-        {
-            Tasks = tr5Client.Get<ResponseWrapper<List<TaskDto>>>(request).Rows
-        };
     }
 
-    [Action("Get task", Description = "Get task by Id")]
-    public GetTaskResponse GetTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] GetTaskRequest input)
+    [Action("List tasks", Description = "List all tasks")]
+    public async Task<AllTasksResponse> ListAllTasks()
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task/{input.Id}",
-            Method.Get, authenticationCredentialsProviders);
-        var task = tr5Client.Get<ResponseWrapper<TaskDto>>(request).Rows;
-        return new GetTaskResponse()
-        {
-            Id = task.Id,
-            Name = task.TaskName
-        };
+        var request = new Translate5Request("/editor/task", Method.Get, Creds);
+        var items = await Client.Paginate<TaskDto>(request, x => x.Id);
+        
+        return new(items);
+    }
+
+    [Action("Get task", Description = "Get specific task")]
+    public Task<TaskDto> GetTask([ActionParameter] TaskRequest input)
+    {
+        var endpoint = $"/editor/task/{input.TaskId}";
+        var request = new Translate5Request(endpoint, Method.Get, Creds);
+
+        return Client.ExecuteWithErrorHandling<TaskDto>(request);
     }
 
     [Action("Create task", Description = "Create new task")]
-    public TaskDto CreateTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] CreateTaskRequest input)
+    public Task<TaskDto> CreateTask([ActionParameter] CreateTaskRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task",
-            Method.Post, authenticationCredentialsProviders);
-        request.AlwaysMultipartFormData = true;
+        var parameters = new List<KeyValuePair<string, string>>()
+        {
+            new("taskName", input.TaskName),
+            new("sourceLang", input.SourceLanguage),
+            new("targetLang", input.TargetLanguage),
+        };
 
-        request.AddParameter("taskName", input.TaskName);
-        request.AddParameter("sourceLang", input.SourceLanguage);
-        request.AddParameter("targetLang", input.TargetLanguage);
+        var request = new Translate5Request("/editor/task", Method.Post, Creds)
+        {
+            AlwaysMultipartFormData = true
+        };
 
         request.AddFile("importUpload", input.File.Bytes, input.FileName ?? input.File.Name);
-        return tr5Client.Execute<ResponseWrapper<TaskDto>>(request).Data.Rows;
+        parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
+
+        return Client.ExecuteWithErrorHandling<TaskDto>(request);
     }
 
-
     [Action("Change task name", Description = "Change task name")]
-    public TaskDto ChangeTaskName(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+    public Task<TaskDto> ChangeTaskName(
+        [ActionParameter] TaskRequest task,
         [ActionParameter] ChangeTaskNameRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task/{input.TaskId}", Method.Put,
-            authenticationCredentialsProviders);
-        request.AddParameter("data", JsonConvert.SerializeObject(new
-        {
-            taskName = input.NewName
-        }));
-        return tr5Client.Execute<ResponseWrapper<TaskDto>>(request).Data.Rows;
+        var endpoint = $"/editor/task/{task.TaskId}";
+
+        var request = new Translate5Request(endpoint, Method.Put, Creds)
+            .WithData(input);
+
+        return Client.ExecuteWithErrorHandling<TaskDto>(request);
     }
 
     [Action("Delete task", Description = "Delete task")]
-    public void DeleteTask(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] DeleteTaskRequest input)
+    public Task DeleteTask([ActionParameter] TaskRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task/{input.Id}",
-            Method.Delete, authenticationCredentialsProviders);
+        var endpoint = $"/editor/task/{input.TaskId}";
+        var request = new Translate5Request(endpoint, Method.Delete, Creds);
 
-        tr5Client.Execute(request);
+        return Client.ExecuteWithErrorHandling(request);
     }
 
     [Action("Export translated file", Description = "Export translated file by task Id")]
-    public ExportTaskFileResponse ExportTaskFile(
-        IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] GetTaskRequest input)
+    public async Task<DownloadFileResponse> ExportTaskFile([ActionParameter] TaskRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/task/export/id/{input.Id}?format=filetranslation",
-            Method.Get, authenticationCredentialsProviders);
-        var response = tr5Client.Get(request);
+        var endpoint = $"/editor/task/export/id/{input.TaskId}?format=filetranslation";
+        var request = new Translate5Request(endpoint, Method.Get, Creds);
+
+        var response = await Client.ExecuteWithErrorHandling(request);
 
         var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
         var filename = filenameHeader.Value.ToString().Split(';')[2].Split("filename=")[1];
 
-        return new ExportTaskFileResponse()
+        return new()
         {
             File = new(response.RawBytes)
             {
@@ -112,42 +105,25 @@ public class TaskActions
     }
 
     [Action("Create task from ZIP", Description = "Create task from ZIP")]
-    public TaskDto CreateTaskFromZIP(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] CreateTaskFromZipRequest input)
+    public async Task<TaskDto> CreateTaskFromZip([ActionParameter] CreateTaskFromZipRequest input)
     {
-        using (var memoryStream = new MemoryStream())
+        using var memoryStream = new MemoryStream();
+        using var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true);
+
+        foreach (var workfile in input.Workfiles)
+            await archive.AddFileToZip($"workfiles/{workfile.Name}", workfile.Bytes);
+
+        if (input.Images != null)
+            foreach (var image in input.Images)
+                await archive.AddFileToZip($"visual/image/{image.Name}", image.Bytes);
+
+        return await CreateTask(new()
         {
-            using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
-            {
-                foreach (var workfile in input.Workfiles)
-                {
-                    AddFileToZip("workfiles", workfile, archive);
-                }
-
-                if (input.Images != null)
-                {
-                    foreach (var image in input.Images)
-                    {
-                        AddFileToZip("visual/image", image, archive);
-                    }
-                }
-            }
-
-            return CreateTask(authenticationCredentialsProviders, new CreateTaskRequest()
-            {
-                SourceLanguage = input.SourceLanguage,
-                TargetLanguage = input.TargetLanguage,
-                TaskName = input.TaskName,
-                FileName = "import.zip",
-                File = new(memoryStream.ToArray())
-            });
-        }
-    }
-
-    private void AddFileToZip(string folderPath, File file, ZipArchive archive)
-    {
-        var workfileTarget = archive.CreateEntry($"{folderPath}/{file.Name}");
-        using var entryStream = workfileTarget.Open();
-        entryStream.Write(file.Bytes, 0, file.Bytes.Length);
+            SourceLanguage = input.SourceLanguage,
+            TargetLanguage = input.TargetLanguage,
+            TaskName = input.TaskName,
+            FileName = "import.zip",
+            File = new(memoryStream.ToArray())
+        });
     }
 }

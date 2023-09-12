@@ -1,65 +1,90 @@
-﻿using Apps.Translate5.Dtos;
-using Blackbird.Applications.Sdk.Common;
+﻿using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
-using Blackbird.Applications.Sdk.Common.Authentication;
 using RestSharp;
-using Apps.Translate5.Models.Translations.Requests;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Headers;
 using System.Net.Mime;
-using Apps.Translate5.Models.Translations.Response;
-using Newtonsoft.Json;
+using Apps.Translate5.Api;
+using Apps.Translate5.Extensions;
+using Apps.Translate5.Invocables;
+using Apps.Translate5.Models;
+using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Request.Translations;
+using Apps.Translate5.Models.Response;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
-public class TranslationActions
+public class TranslationActions : Translate5Invocable
 {
-    [Action("Translate text with translate5 language resources", Description = "Translate text with translate5 language resources")]
-    public TranslationTextDto TranslateTextInstantly(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] TranslateTextInstantlyRequest input)
+    public TranslationActions(InvocationContext invocationContext) : base(invocationContext)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/instanttranslateapi/translate",
-            Method.Post, authenticationCredentialsProviders);
-        request.AlwaysMultipartFormData = true;
-
-        request.AddParameter("source", input.SourceLanguage);
-        request.AddParameter("target", input.TargetLanguage);
-        request.AddParameter("text", input.Text);
-
-        var intantTranslateResponse = JObject.Parse(tr5Client.Execute(request).Content);
-        var languageResourceExists = intantTranslateResponse.First.First.ToObject<JObject>().ContainsKey(input.LanguageResource);
-        if (!languageResourceExists)
-        {
-            throw new ArgumentException($"\"{input.LanguageResource}\" language resource is not configured");
-        }
-        var translations = intantTranslateResponse.First.First[input.LanguageResource].First.First.ToArray();
-        return translations.First().ToObject<TranslationTextDto>();
     }
 
-    [Action("Translate a file with translate5 language resources", Description = "Translate a file with translate5 language resources")]
-    public TranslateFileResponse TranslateFile(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] TranslateFileRequest input)
+    [Action("Translate text", Description = "Translate text with translate5 language resources")]
+    public async Task<TranslationTextDto> TranslateTextInstantly(
+        [ActionParameter] TranslateTextInstantlyRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var sessionCookie = tr5Client.GetSessionCookie(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/instanttranslateapi/filepretranslate",
-            Method.Post, authenticationCredentialsProviders, sessionCookie);
-        request.AlwaysMultipartFormData = true;
+        var parameters = new List<KeyValuePair<string, string>>()
+        {
+            new("source", input.SourceLanguage),
+            new("target", input.TargetLanguage),
+            new("text", input.Text),
+        };
 
-        request.AddParameter("source", input.SourceLanguage);
-        request.AddParameter("target", input.TargetLanguage);
+        var request = new Translate5Request("/editor/instanttranslateapi/translate", Method.Post, Creds)
+        {
+            AlwaysMultipartFormData = true
+        };
+        parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
+
+        var response = await Client.ExecuteWithErrorHandling(request);
+        var intantTranslateResponse = JObject.Parse(response.Content);
+
+        if (!intantTranslateResponse["rows"].Value<JObject>().ContainsKey(input.LanguageResource))
+            throw new ArgumentException($"\"{input.LanguageResource}\" language resource is not configured");
+
+        var translations = intantTranslateResponse.First.First[input.LanguageResource].Value<JArray>();
+
+        return translations.FirstOrDefault()?.ToObject<TranslationTextDto>() ??
+               throw new("No translations from this resource");
+    }
+
+    [Action("Translate file", Description = "Translate a file with translate5 language resources")]
+    public async Task<DownloadFileResponse> TranslateFile([ActionParameter] TranslateFileRequest input)
+    {
+        var parameters = new List<KeyValuePair<string, string>>()
+        {
+            new("source", input.SourceLanguage),
+            new("target", input.TargetLanguage),
+        };
+
+        var sessionCookie = await Client.GetSessionCookie(Creds);
+
+        var endpoint = "/editor/instanttranslateapi/filepretranslate";
+        var request = new Translate5Request(endpoint, Method.Post, Creds, sessionCookie)
+        {
+            AlwaysMultipartFormData = true
+        };
+
+        parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
         request.AddFile("file", input.File.Bytes, input.Filename ?? input.File.Name);
-        var taskId = tr5Client.Execute<TaskIdDto>(request).Data;
 
-        var downloadUrl = tr5Client.PollFileInstantTranslation(authenticationCredentialsProviders, taskId.TaskId, sessionCookie);
+        var taskId = await Client.ExecuteAsync<TaskIdDto>(request);
 
-        var downloadRequest = new Translate5Request(downloadUrl.Replace("\\", ""), Method.Get, authenticationCredentialsProviders, sessionCookie);
-        var translatedFileResponse = tr5Client.Get(downloadRequest);
+        var downloadUrl = Client.PollFileInstantTranslation(Creds, taskId.Data!.TaskId, sessionCookie);
 
-        var filename = ContentDispositionHeaderValue.Parse(translatedFileResponse.ContentHeaders.First(h => h.Name == "Content-Disposition").Value.ToString()).FileName;
-        return new TranslateFileResponse()
+        var downloadEndpoint = downloadUrl.Replace("\\", "");
+        var downloadRequest = new Translate5Request(downloadEndpoint, Method.Get, Creds, sessionCookie);
+
+        var translatedFileResponse = await Client.ExecuteAsync(downloadRequest);
+
+        var filename = ContentDispositionHeaderValue
+            .Parse(translatedFileResponse.ContentHeaders
+                .First(h => h.Name == "Content-Disposition").Value.ToString()).FileName;
+
+        return new()
         {
             File = new(translatedFileResponse.RawBytes)
             {
@@ -69,15 +94,14 @@ public class TranslationActions
         };
     }
 
-    [Action("Write translation memory into OpenTM2", Description = "Write translation memory into OpenTM2")]
-    public void WriteTranslationMemory(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] WriteTranslationMemoryRequest input)
+    [Action("Write translation memory", Description = "Write translation memory into OpenTM2")]
+    public Task WriteTranslationMemory([ActionParameter] WriteTranslationMemoryRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"editor/instanttranslateapi/writetm", Method.Post, authenticationCredentialsProviders);
-        request.AlwaysMultipartFormData = true;
+        var request = new Translate5Request($"editor/instanttranslateapi/writetm", Method.Post, Creds)
+        {
+            AlwaysMultipartFormData = true
+        }.WithData(input);
 
-        request.AddParameter("data", JsonConvert.SerializeObject(input));
-        tr5Client.Execute(request);
+        return Client.ExecuteWithErrorHandling(request);
     }
 }

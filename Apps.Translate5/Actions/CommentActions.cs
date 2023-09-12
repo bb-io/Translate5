@@ -1,52 +1,56 @@
-﻿using Apps.Translate5.Dtos;
-using Apps.Translate5.Models;
-using Apps.Translate5.Models.Comments.Requests;
-using Apps.Translate5.Models.Comments.Response;
+﻿using Apps.Translate5.Api;
+using Apps.Translate5.Extensions;
+using Apps.Translate5.Invocables;
+using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Request.Comments;
+using Apps.Translate5.Models.Request.Segments;
+using Apps.Translate5.Models.Response.Comments;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
-using Blackbird.Applications.Sdk.Common.Authentication;
-using Newtonsoft.Json;
+using Blackbird.Applications.Sdk.Common.Invocation;
 using RestSharp;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
-public class CommentActions
+public class CommentActions : Translate5Invocable
 {
-    [Action("List comments for segment", Description = "List comments for segment")]
-    public ListCommentsResponse ListComments(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] ListCommentsRequest input)
+    public CommentActions(InvocationContext invocationContext) : base(invocationContext)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment?segmentId={input.SegmentId}",
-            Method.Get, authenticationCredentialsProviders, input.TaskId);
-        return new ListCommentsResponse()
-        {
-            Comments = tr5Client.Get<ResponseWrapper<List<CommentDto>>>(request).Rows
-        };
     }
 
-    [Action("Create comment", Description = "Create comment")]
-    public CommentDto CreateComment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] CreateCommentRequest input)
+    [Action("List comments", Description = "List comments for a segment")]
+    public async Task<ListCommentsResponse> ListComments([ActionParameter] SegmentRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment",
-            Method.Post, authenticationCredentialsProviders, input.TaskId);
-        request.AddParameter("data", JsonConvert.SerializeObject(new
-        {
-            segmentId = input.SegmentId,
-            comment = input.Comment
-        }));
-        return tr5Client.Execute<ResponseWrapper<CommentDto>>(request).Data.Rows;
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
+        
+        var endpoint = $"/editor/taskid/{input.TaskId}/comment?segmentId={input.SegmentId}";
+        var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
+
+        var response = await Client.ExecuteWithErrorHandling<List<CommentDto>>(request);
+        return new(response);
     }
 
-    [Action("Delete comment", Description = "Delete comment")]
-    public void DeleteComment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] DeleteCommentRequest input)
+    [Action("Create comment", Description = "Create a new comment")]
+    public async Task<CommentDto> CreateComment([ActionParameter] CreateCommentInput input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/comment/{input.CommentId}", Method.Delete, authenticationCredentialsProviders, input.TaskId);
-        tr5Client.Execute(request);
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
+        
+        var endpoint = $"/editor/taskid/{input.TaskId}/comment";
+        var request = new Translate5Request(endpoint, Method.Post, Creds, sessionCookie)
+            .WithData(new CreateCommentRequest(input));
+
+        return await Client.ExecuteWithErrorHandling<CommentDto>(request);
+    }
+
+    [Action("Delete comment", Description = "Delete specific comment")]
+    public async Task DeleteComment([ActionParameter] DeleteCommentRequest input)
+    {
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
+        
+        var endpoint = $"/editor/taskid/{input.TaskId}/comment/{input.CommentId}";
+        var request = new Translate5Request(endpoint, Method.Delete, Creds, sessionCookie);
+
+        await Client.ExecuteWithErrorHandling(request);
     }
 }

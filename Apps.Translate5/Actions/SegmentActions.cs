@@ -1,72 +1,79 @@
-﻿using Apps.Translate5.Dtos;
-using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using Apps.Translate5.Api;
+using Apps.Translate5.Extensions;
+using Apps.Translate5.Invocables;
 using Blackbird.Applications.Sdk.Common;
-using Newtonsoft.Json;
 using RestSharp;
-using Apps.Translate5.Models.Segments.Requests;
-using Apps.Translate5.Models.Segments.Responses;
-using Apps.Translate5.Models;
+using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Dtos.Simple;
+using Apps.Translate5.Models.Request.Segments;
+using Apps.Translate5.Models.Request.Tasks;
+using Apps.Translate5.Models.Response.Segments;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
-public class SegmentActions
+public class SegmentActions : Translate5Invocable
 {
-
-    [Action("List segments for task", Description = "List segments for task")]
-    public ListSegmentsResponse ListSegments(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] ListSegmentsRequest input)
+    public SegmentActions(InvocationContext invocationContext) : base(invocationContext)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment?start={input.StartIndex}&limit={input.Limit}", Method.Get, authenticationCredentialsProviders, input.TaskId);
-        return new ListSegmentsResponse()
-        {
-            Segments = tr5Client.Get<ResponseWrapper<List<SegmentDto>>>(request).Rows
-        };
     }
 
-    [Action("Get segment", Description = "Get segment by Id")]
-    public SegmentDto GetSegment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] GetSegmentRequest input)
+    [Action("List segments", Description = "List segments for a task")]
+    public async Task<ListSegmentsResponse> ListSegments([ActionParameter] TaskRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment?id={input.SegmentId}",
-            Method.Get, authenticationCredentialsProviders, input.TaskId);
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
+        
+        var endpoint = $"/editor/taskid/{input.TaskId}/segment";
+        var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
 
-        return tr5Client.Get<ResponseWrapper<SegmentDto>>(request).Rows;
+        var response = await Client.Paginate<SegmentDto>(request, x => x.Id);
+        return new(response);
+    }
+
+    [Action("Get segment", Description = "Get specific segment")]
+    public async Task<SegmentDto> GetSegment([ActionParameter] SegmentRequest input)
+    {
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
+        
+        var endpoint = $"/editor/taskid/{input.TaskId}/segment?id={input.SegmentId}";
+        var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
+
+        return await Client.ExecuteWithErrorHandling<SegmentDto>(request);
     }
 
     [Action("Search segments", Description = "Search segments in task")]
-    public SearchSegmentResponse SearchSegments(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] SearchSegmentRequest input)
+    public async Task<SearchSegmentResponse> SearchSegments([ActionParameter] SearchSegmentRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment/search", Method.Get, authenticationCredentialsProviders, input.TaskId);
+        var sessionCookie = await Client.GetTaskSessionCookie(Creds, input.TaskId);
 
-        request.AddParameter("taskGuid", input.TaskGuid);
-        request.AddParameter("searchField", input.SearchFieldValue);
-        request.AddParameter("searchInField", input.SearchInField);
-
-        return new SearchSegmentResponse()
+        var parameters = new List<KeyValuePair<string, string>>()
         {
-            Segments = tr5Client.Get<ResponseWrapper<List<SegmentSearchDto>>>(request).Rows
+            new("taskGuid", input.TaskGuid),
+            new("searchField", input.SearchField),
+            new("searchInField", input.SearchInField),
         };
+
+        var endpoint = $"/editor/taskid/{input.TaskId}/segment/search";
+        var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
+
+        parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
+
+        var response = await Client.ExecuteWithErrorHandling<List<SimpleSegmentDto>>(request);
+        return new(response);
     }
 
-    [Action("Translate segment", Description = "Translate segment")]
-    public void TranslateSegment(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
+    [Action("Translate segment", Description = "Translate a specific segment")]
+    public Task TranslateSegment(
+        [ActionParameter] SegmentRequest segment,
         [ActionParameter] TranslateSegmentRequest input)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5EditRequest($"/editor/taskid/{input.TaskId}/segment/{input.SegmentId}",
-            Method.Put, authenticationCredentialsProviders, input.TaskId);
-        request.AddParameter("data", JsonConvert.SerializeObject(new
-        {
-            targetEdit = input.Translation
-        }));
-        tr5Client.Execute(request);
-    }
+        var endpoint = $"/editor/taskid/{segment.TaskId}/segment/{segment.SegmentId}";
 
-        
+        var request = new Translate5Request(endpoint, Method.Put, Creds, segment.TaskId)
+            .WithData(input);
+
+        return Client.ExecuteWithErrorHandling(request);
+    }
 }

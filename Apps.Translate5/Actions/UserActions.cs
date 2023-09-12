@@ -1,27 +1,26 @@
-﻿using Apps.Translate5.Dtos;
-using Blackbird.Applications.Sdk.Common;
-using Blackbird.Applications.Sdk.Common.Authentication;
+﻿using Apps.Translate5.Api;
+using Apps.Translate5.Invocables;
 using RestSharp;
-using Apps.Translate5.Models.Users.Responses;
-using Apps.Translate5.Models.Users.Requests;
-using Apps.Translate5.Models;
+using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Response.Users;
 using Blackbird.Applications.Sdk.Common.Actions;
+using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
-public class UserActions
+public class UserActions : Translate5Invocable
 {
-    [Action("List all users", Description = "List all users")]
-    public AllUsersResponse ListAllUsers(IEnumerable<AuthenticationCredentialsProvider> authenticationCredentialsProviders,
-        [ActionParameter] AllUsersRequest input)
+    public UserActions(InvocationContext invocationContext) : base(invocationContext)
     {
-        var tr5Client = new Translate5Client(authenticationCredentialsProviders);
-        var request = new Translate5Request($"/editor/user",
-            Method.Get, authenticationCredentialsProviders);
-        return new AllUsersResponse()
-        {
-            Users = tr5Client.Get<ResponseWrapper<List<UserDto>>>(request).Rows
-        };
+    }
+
+    [Action("List users", Description = "List all users")]
+    public async Task<AllUsersResponse> ListAllUsers()
+    {
+        var request = new Translate5Request("/editor/user", Method.Get, Creds);
+        var response = await Client.ExecuteWithErrorHandling<List<UserDto>>(request);
+
+        return new(response);
     }
 }
