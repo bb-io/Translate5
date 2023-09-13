@@ -1,5 +1,4 @@
-﻿using Apps.Translate5.Models;
-using Blackbird.Applications.Sdk.Common;
+﻿using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
 using RestSharp;
 using System.IO.Compression;
@@ -83,7 +82,7 @@ public class TaskActions : Translate5Invocable
         return Client.ExecuteWithErrorHandling(request);
     }
 
-    [Action("Export translated file", Description = "Export translated file by task Id")]
+    [Action("Export translated file", Description = "Export translated file by task ID")]
     public async Task<DownloadFileResponse> ExportTaskFile([ActionParameter] TaskRequest input)
     {
         var endpoint = $"/editor/task/export/id/{input.TaskId}?format=filetranslation";
