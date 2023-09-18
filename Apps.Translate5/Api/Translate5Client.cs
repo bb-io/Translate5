@@ -18,7 +18,6 @@ public class Translate5Client : BlackBirdRestClient
 
     public Translate5Client(AuthenticationCredentialsProvider[] creds) : base(new()
     {
-        ThrowOnAnyError = true,
         BaseUrl = creds.Get(CredsNames.Url).Value.ToUri()
     })
     {

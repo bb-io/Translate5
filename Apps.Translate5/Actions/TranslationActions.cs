@@ -70,14 +70,14 @@ public class TranslationActions : Translate5Invocable
         parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
         request.AddFile("file", input.File.Bytes, input.Filename ?? input.File.Name);
 
-        var taskId = await Client.ExecuteAsync<TaskIdDto>(request);
+        var taskId = await Client.ExecuteWithErrorHandling<TaskIdDto>(request);
 
-        var downloadUrl = Client.PollFileInstantTranslation(Creds, taskId.Data!.TaskId, sessionCookie);
+        var downloadUrl = Client.PollFileInstantTranslation(Creds, taskId.TaskId, sessionCookie);
 
         var downloadEndpoint = downloadUrl.Replace("\\", "");
         var downloadRequest = new Translate5Request(downloadEndpoint, Method.Get, Creds, sessionCookie);
 
-        var translatedFileResponse = await Client.ExecuteAsync(downloadRequest);
+        var translatedFileResponse = await Client.ExecuteWithErrorHandling(downloadRequest);
 
         var filename = ContentDispositionHeaderValue
             .Parse(translatedFileResponse.ContentHeaders
