@@ -18,6 +18,9 @@ public class CreateTaskRequest
     [DataSource(typeof(LanguageDataHandler))]
     public string TargetLanguage { get; set; }
 
+    [Display("Customer ID")]
+    public string? CustomerId { get; set; } 
+
     [Display("File name")]
     public string? FileName { get; set; }  //example: test.txt
 

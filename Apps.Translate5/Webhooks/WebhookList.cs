@@ -8,13 +8,13 @@ namespace Apps.Translate5.Webhooks;
 public class WebhookList
 {
     [Webhook("On task import finished", Description = "On task import finished")]
-    public Task<WebhookResponse<TaskImportPayload>> OnTaskImportFinished(WebhookRequest webhookRequest)
+    public Task<WebhookResponse<TaskPayload>> OnTaskImportFinished(WebhookRequest webhookRequest)
     {
-        var data = JsonConvert.DeserializeObject<TaskImportPayload>(webhookRequest.Body.ToString());
+        var data = JsonConvert.DeserializeObject<TaskPayload>(webhookRequest.Body.ToString());
 
         if (data is null) throw new InvalidCastException(nameof(webhookRequest.Body));
 
-        return Task.FromResult(new WebhookResponse<TaskImportPayload>
+        return Task.FromResult(new WebhookResponse<TaskPayload>
         {
             HttpResponseMessage = null,
             Result = data

@@ -42,11 +42,12 @@ public class TaskActions : Translate5Invocable
     [Action("Create task", Description = "Create new task")]
     public Task<TaskDto> CreateTask([ActionParameter] CreateTaskRequest input)
     {
-        var parameters = new List<KeyValuePair<string, string>>()
+        var parameters = new List<KeyValuePair<string, string?>>()
         {
             new("taskName", input.TaskName),
             new("sourceLang", input.SourceLanguage),
             new("targetLang", input.TargetLanguage),
+            new("customerId", input.CustomerId),
         };
 
         var request = new Translate5Request("/editor/task", Method.Post, Creds)
@@ -55,7 +56,10 @@ public class TaskActions : Translate5Invocable
         };
 
         request.AddFile("importUpload", input.File.Bytes, input.FileName ?? input.File.Name);
-        parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
+        parameters
+            .Where(x => x.Value is not null)
+            .ToList()
+            .ForEach(x => request.AddParameter(x.Key, x.Value));
 
         return Client.ExecuteWithErrorHandling<TaskDto>(request);
     }
