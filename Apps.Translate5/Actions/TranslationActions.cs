@@ -39,14 +39,14 @@ public class TranslationActions : Translate5Invocable
         parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
 
         var response = await Client.ExecuteWithErrorHandling(request);
-        var intantTranslateResponse = JObject.Parse(response.Content);
+        var instantTranslateResponse = JObject.Parse(response.Content);
 
-        if (!intantTranslateResponse["rows"].Value<JObject>().ContainsKey(input.LanguageResource))
+        if (!instantTranslateResponse["rows"].Value<JObject>().ContainsKey(input.LanguageResource))
             throw new ArgumentException($"\"{input.LanguageResource}\" language resource is not configured");
+        
+        var translations = instantTranslateResponse.First.First[input.LanguageResource].First?.First?.Value<JArray>();
 
-        var translations = intantTranslateResponse.First.First[input.LanguageResource].Value<JArray>();
-
-        return translations.FirstOrDefault()?.ToObject<TranslationTextDto>() ??
+        return translations?.FirstOrDefault()?.ToObject<TranslationTextDto>() ??
                throw new("No translations from this resource");
     }
 

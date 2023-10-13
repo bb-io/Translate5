@@ -26,23 +26,22 @@ public class TaskActions : Translate5Invocable
     {
         var request = new Translate5Request("/editor/task", Method.Get, Creds);
         var items = await Client.Paginate<TaskDto>(request, x => x.Id);
-        
         return new(items);
     }
 
     [Action("Get task", Description = "Get specific task")]
-    public Task<TaskDto> GetTask([ActionParameter] TaskRequest input)
+    public async Task<TaskDto> GetTask([ActionParameter] TaskRequest input)
     {
         var endpoint = $"/editor/task/{input.TaskId}";
         var request = new Translate5Request(endpoint, Method.Get, Creds);
-
-        return Client.ExecuteWithErrorHandling<TaskDto>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<TaskDto>>(request);
+        return response.Rows;
     }
 
     [Action("Create task", Description = "Create new task")]
-    public Task<TaskDto> CreateTask([ActionParameter] CreateTaskRequest input)
+    public async Task<TaskDto> CreateTask([ActionParameter] CreateTaskRequest input)
     {
-        var parameters = new List<KeyValuePair<string, string?>>()
+        var parameters = new List<KeyValuePair<string, string?>>
         {
             new("taskName", input.TaskName),
             new("sourceLang", input.SourceLanguage),
@@ -61,11 +60,12 @@ public class TaskActions : Translate5Invocable
             .ToList()
             .ForEach(x => request.AddParameter(x.Key, x.Value));
 
-        return Client.ExecuteWithErrorHandling<TaskDto>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<TaskDto>>(request);
+        return response.Rows;
     }
 
     [Action("Change task name", Description = "Change task name")]
-    public Task<TaskDto> ChangeTaskName(
+    public async Task<TaskDto> ChangeTaskName(
         [ActionParameter] TaskRequest task,
         [ActionParameter] ChangeTaskNameRequest input)
     {
@@ -74,16 +74,16 @@ public class TaskActions : Translate5Invocable
         var request = new Translate5Request(endpoint, Method.Put, Creds)
             .WithData(input);
 
-        return Client.ExecuteWithErrorHandling<TaskDto>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<TaskDto>>(request);
+        return response.Rows;
     }
 
     [Action("Delete task", Description = "Delete task")]
-    public Task DeleteTask([ActionParameter] TaskRequest input)
+    public async Task DeleteTask([ActionParameter] TaskRequest input)
     {
         var endpoint = $"/editor/task/{input.TaskId}";
         var request = new Translate5Request(endpoint, Method.Delete, Creds);
-
-        return Client.ExecuteWithErrorHandling(request);
+        await Client.ExecuteWithErrorHandling(request);
     }
 
     [Action("Export translated file", Description = "Export translated file by task ID")]

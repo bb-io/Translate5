@@ -7,6 +7,7 @@ using Apps.Translate5.Models.Dtos;
 using Apps.Translate5.Models.Dtos.Simple;
 using Apps.Translate5.Models.Request.Segments;
 using Apps.Translate5.Models.Request.Tasks;
+using Apps.Translate5.Models.Response;
 using Apps.Translate5.Models.Response.Segments;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -40,7 +41,8 @@ public class SegmentActions : Translate5Invocable
         var endpoint = $"/editor/taskid/{input.TaskId}/segment?id={input.SegmentId}";
         var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
 
-        return await Client.ExecuteWithErrorHandling<SegmentDto>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<SegmentDto>>(request);
+        return response.Rows;
     }
 
     [Action("Search segments", Description = "Search segments in task")]
@@ -60,8 +62,8 @@ public class SegmentActions : Translate5Invocable
 
         parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
 
-        var response = await Client.ExecuteWithErrorHandling<List<SimpleSegmentDto>>(request);
-        return new(response);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<SimpleSegmentDto>>>(request);
+        return new(response.Rows);
     }
 
     [Action("Translate segment", Description = "Translate a specific segment")]

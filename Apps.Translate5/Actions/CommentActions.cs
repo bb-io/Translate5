@@ -4,6 +4,7 @@ using Apps.Translate5.Invocables;
 using Apps.Translate5.Models.Dtos;
 using Apps.Translate5.Models.Request.Comments;
 using Apps.Translate5.Models.Request.Segments;
+using Apps.Translate5.Models.Response;
 using Apps.Translate5.Models.Response.Comments;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Actions;
@@ -27,8 +28,8 @@ public class CommentActions : Translate5Invocable
         var endpoint = $"/editor/taskid/{input.TaskId}/comment?segmentId={input.SegmentId}";
         var request = new Translate5Request(endpoint, Method.Get, Creds, sessionCookie);
 
-        var response = await Client.ExecuteWithErrorHandling<List<CommentDto>>(request);
-        return new(response);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<CommentDto>>>(request);
+        return new(response.Rows);
     }
 
     [Action("Create comment", Description = "Create a new comment")]
@@ -40,7 +41,8 @@ public class CommentActions : Translate5Invocable
         var request = new Translate5Request(endpoint, Method.Post, Creds, sessionCookie)
             .WithData(new CreateCommentRequest(input));
 
-        return await Client.ExecuteWithErrorHandling<CommentDto>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<CommentDto>>(request);
+        return response.Rows;
     }
 
     [Action("Delete comment", Description = "Delete specific comment")]

@@ -2,6 +2,7 @@
 using Apps.Translate5.Invocables;
 using RestSharp;
 using Apps.Translate5.Models.Dtos;
+using Apps.Translate5.Models.Response;
 using Apps.Translate5.Models.Response.Users;
 using Blackbird.Applications.Sdk.Common.Actions;
 using Blackbird.Applications.Sdk.Common.Invocation;
@@ -19,8 +20,8 @@ public class UserActions : Translate5Invocable
     public async Task<AllUsersResponse> ListAllUsers()
     {
         var request = new Translate5Request("/editor/user", Method.Get, Creds);
-        var response = await Client.ExecuteWithErrorHandling<List<UserDto>>(request);
+        var response = await Client.ExecuteWithErrorHandling<ResponseWrapper<List<UserDto>>>(request);
 
-        return new(response);
+        return new(response.Rows);
     }
 }

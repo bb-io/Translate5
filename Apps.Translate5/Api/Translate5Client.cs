@@ -70,8 +70,8 @@ public class Translate5Client : BlackBirdRestClient
 
     public override async Task<T> ExecuteWithErrorHandling<T>(RestRequest request)
     {
-        var response = await base.ExecuteWithErrorHandling<ResponseWrapper<T>>(request);
-        return response.Rows;
+        var response = await base.ExecuteWithErrorHandling<T>(request);
+        return response;
     }
 
     #endregion
