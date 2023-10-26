@@ -4,6 +4,10 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Product>Blackbird Translate5</Product>
+    <Version>1.0.0</Version>
+    <Description>Cloud translation, review, post-editing and terminology platform</Description>
+    <AssemblyName>Apps.Translate5</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
