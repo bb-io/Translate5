@@ -47,6 +47,8 @@ public class TaskActions : Translate5Invocable
             new("sourceLang", input.SourceLanguage),
             new("targetLang", input.TargetLanguage),
             new("customerId", input.CustomerId),
+            new("foreignId", input.ForeignId),
+            new("foreignName", input.ForeignName),
         };
 
         var request = new Translate5Request("/editor/task", Method.Post, Creds)

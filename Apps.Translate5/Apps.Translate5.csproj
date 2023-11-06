@@ -1,22 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Product>Translate5</Product>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
     <Description>Cloud translation, review, post-editing and terminology platform</Description>
     <AssemblyName>Apps.Translate5</AssemblyName>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Blackbird.Applications.Sdk.Common" Version="2.2.0-alpha3" />
     <PackageReference Include="Blackbird.Applications.Sdk.Utils" Version="1.0.9" />
   </ItemGroup>
-
   <ItemGroup>
     <EmbeddedResource CopyToOutputDirectory="Always" Include="image\icon.png"></EmbeddedResource>
   </ItemGroup>
-  
 </Project>

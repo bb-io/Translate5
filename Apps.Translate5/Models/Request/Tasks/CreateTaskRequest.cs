@@ -25,4 +25,10 @@ public class CreateTaskRequest
     public string? FileName { get; set; }  //example: test.txt
 
     public File File { get; set; }
+    
+    [Display("Foreign ID")]
+    public string? ForeignId { get; set; }
+    
+    [Display("Foreign name")]
+    public string? ForeignName { get; set; }
 }
