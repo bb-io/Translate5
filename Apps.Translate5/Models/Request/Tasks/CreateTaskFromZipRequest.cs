@@ -1,7 +1,8 @@
 ﻿using Apps.Translate5.DataSourceHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
+using Blackbird.Applications.Sdk.Common.Files;
+
 
 namespace Apps.Translate5.Models.Request.Tasks;
 
@@ -19,8 +20,8 @@ public class CreateTaskFromZipRequest
     public string TargetLanguage { get; set; }
 
     [Display("Work files")]
-    public IEnumerable<File> Workfiles { get; set; }
+    public IEnumerable<FileReference> Workfiles { get; set; }
 
     [Display("Images (visual/image)")]
-    public IEnumerable<File>? Images { get; set; }
+    public IEnumerable<FileReference>? Images { get; set; }
 }

@@ -1,7 +1,8 @@
 ﻿using Apps.Translate5.DataSourceHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
+using Blackbird.Applications.Sdk.Common.Files;
+
 
 namespace Apps.Translate5.Models.Request.Translations;
 
@@ -10,7 +11,7 @@ public class TranslateFileRequest
     [Display("File name")]
     public string? Filename { get; set; }
 
-    public File File { get; set; }
+    public FileReference File { get; set; }
 
     [Display("Source language")]
     [DataSource(typeof(LanguageDataHandler))]

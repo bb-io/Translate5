@@ -1,7 +1,8 @@
 ﻿using Apps.Translate5.DataSourceHandlers;
 using Blackbird.Applications.Sdk.Common;
 using Blackbird.Applications.Sdk.Common.Dynamic;
-using File = Blackbird.Applications.Sdk.Common.Files.File;
+using Blackbird.Applications.Sdk.Common.Files;
+
 
 namespace Apps.Translate5.Models.Request.Tasks;
 
@@ -24,7 +25,7 @@ public class CreateTaskRequest
     [Display("File name")]
     public string? FileName { get; set; }  //example: test.txt
 
-    public File File { get; set; }
+    public FileReference File { get; set; }
     
     [Display("Foreign ID")]
     public string? ForeignId { get; set; }
