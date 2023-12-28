@@ -11,14 +11,18 @@ using Apps.Translate5.Models.Dtos;
 using Apps.Translate5.Models.Request.Translations;
 using Apps.Translate5.Models.Response;
 using Blackbird.Applications.Sdk.Common.Invocation;
+using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
+using Blackbird.Applications.Sdk.Utils.Extensions.Files;
 
 namespace Apps.Translate5.Actions;
 
 [ActionList]
 public class TranslationActions : Translate5Invocable
 {
-    public TranslationActions(InvocationContext invocationContext) : base(invocationContext)
+    private readonly IFileManagementClient _fileManagementClient;
+    public TranslationActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
     {
+        _fileManagementClient = fileManagementClient;
     }
 
     [Action("Translate text", Description = "Translate text with translate5 language resources")]
@@ -68,7 +72,8 @@ public class TranslationActions : Translate5Invocable
         };
 
         parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
-        request.AddFile("file", input.File.Bytes, input.Filename ?? input.File.Name);
+        var fileBytes = _fileManagementClient.DownloadAsync(input.File).Result.GetByteData().Result;
+        request.AddFile("file", fileBytes, input.Filename ?? input.File.Name);
 
         var taskId = await Client.ExecuteWithErrorHandling<TaskIdDto>(request);
 
@@ -83,13 +88,11 @@ public class TranslationActions : Translate5Invocable
             .Parse(translatedFileResponse.ContentHeaders
                 .First(h => h.Name == "Content-Disposition").Value.ToString()).FileName;
 
+        using var stream = new MemoryStream(translatedFileResponse.RawBytes);
+        var file = await _fileManagementClient.UploadAsync(stream, translatedFileResponse.ContentType ?? MediaTypeNames.Application.Octet, filename);
         return new()
         {
-            File = new(translatedFileResponse.RawBytes)
-            {
-                Name = filename,
-                ContentType = translatedFileResponse.ContentType ?? MediaTypeNames.Application.Octet
-            },
+            File = file
         };
     }
 
