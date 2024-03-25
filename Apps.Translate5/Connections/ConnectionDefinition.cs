@@ -15,8 +15,8 @@ public class ConnectionDefinition : IConnectionDefinition
             ConnectionUsage = ConnectionUsage.Actions,
             ConnectionProperties = new List<ConnectionProperty>()
             {
-                new(CredsNames.Url) { DisplayName = "URL" },
-                new(CredsNames.ApiKey) { DisplayName = "API Key" }
+                new(CredsNames.Url) { DisplayName = "URL", Description = "Should look like 'https://[domain]'"},
+                new(CredsNames.ApiKey) { DisplayName = "API Key", Sensitive = true }
             }
         }
     };
