@@ -17,13 +17,13 @@ public class ConnectionValidator : IConnectionValidator
         var creds = authProviders.ToArray();
         var client = new Translate5Client(creds);
 
-        var request = new Translate5Request("/editor/language", Method.Get, creds);
+        var request = new Translate5Request("/editor/task", Method.Get, creds);
 
         try
         {
             var response = await client.ExecuteWithErrorHandling(request);
             
-            if(response.Content != null && response.Content.Contains("null"))
+            if(response.Content == null || response.Content == "null")
             {
                 return new()
                 {
