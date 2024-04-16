@@ -4,7 +4,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Product>Translate5</Product>
-    <Version>1.0.4</Version>
+    <Version>1.0.5</Version>
     <Description>Cloud translation, review, post-editing and terminology platform</Description>
     <AssemblyName>Apps.Translate5</AssemblyName>
   </PropertyGroup>
