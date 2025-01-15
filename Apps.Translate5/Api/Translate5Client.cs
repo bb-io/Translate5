@@ -4,6 +4,7 @@ using Apps.Translate5.Models.Dtos;
 using Apps.Translate5.Models.Request;
 using Apps.Translate5.Models.Response;
 using Blackbird.Applications.Sdk.Common.Authentication;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 using Blackbird.Applications.Sdk.Utils.Extensions.Sdk;
 using Blackbird.Applications.Sdk.Utils.Extensions.String;
 using Blackbird.Applications.Sdk.Utils.RestSharp;
@@ -105,7 +106,7 @@ public class Translate5Client : BlackBirdRestClient
     protected override Exception ConfigureErrorException(RestResponse response)
     {
         var error = JsonConvert.DeserializeObject<ErrorResponse>(response.Content);
-        return new(error.ErrorMessage);
+        return new PluginApplicationException($"Error: {error.ErrorMessage}");
     }
 
     #endregion
