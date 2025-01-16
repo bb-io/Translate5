@@ -13,6 +13,7 @@ using Apps.Translate5.Models.Response;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
+using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Translate5.Actions;
 
@@ -51,7 +52,7 @@ public class TranslationActions : Translate5Invocable
         var translations = instantTranslateResponse.First.First[input.LanguageResource].First?.First?.Value<JArray>();
 
         return translations?.FirstOrDefault()?.ToObject<TranslationTextDto>() ??
-               throw new("No translations from this resource");
+               throw new PluginApplicationException("No translations from this resource");
     }
 
     [Action("Translate file", Description = "Translate a file with translate5 language resources")]
