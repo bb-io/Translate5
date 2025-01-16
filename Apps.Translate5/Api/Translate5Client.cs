@@ -105,9 +105,14 @@ public class Translate5Client : BlackBirdRestClient
 
     protected override Exception ConfigureErrorException(RestResponse response)
     {
+        if (string.IsNullOrWhiteSpace(response.Content))
+            throw new PluginApplicationException(response.ErrorMessage);
+
         var error = JsonConvert.DeserializeObject<ErrorResponse>(response.Content);
+        if (error == null || string.IsNullOrWhiteSpace(error.ErrorMessage))
+            return new PluginApplicationException($"Status code: {response.StatusCode}, Content: {response.Content}");
+
         return new PluginApplicationException($"Error: {error.ErrorMessage}");
     }
-
     #endregion
 }
