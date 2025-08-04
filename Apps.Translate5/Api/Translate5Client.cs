@@ -57,7 +57,7 @@ public class Translate5Client : BlackBirdRestClient
         var result = new List<T>();
         var url = request.Resource.SetQueryParameter("limit", Limit.ToString());
 
-        var offset = -1;
+        var offset = 0;
         PaginationResponse<T> response;
 
         do
@@ -71,12 +71,6 @@ public class Translate5Client : BlackBirdRestClient
 
         return result.DistinctBy(distinctCallback).ToList();
     }
-
-    //public override async Task<T> ExecuteWithErrorHandling<T>(RestRequest request)
-    //{
-    //    var response = await base.ExecuteWithErrorHandling<T>(request);
-    //    return response;
-    //}
 
     public override async Task<T> ExecuteWithErrorHandling<T>(RestRequest request)
     {
