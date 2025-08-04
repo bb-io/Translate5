@@ -17,6 +17,9 @@ public class Translate5Client : BlackBirdRestClient
 {
     private const int Limit = 20;
 
+    private const int MaxRetries = 5;
+    private const int RetryDelayMs = 1000;
+
     public Translate5Client(AuthenticationCredentialsProvider[] creds) : base(new()
     {
         BaseUrl = creds.Get(CredsNames.Url).Value.ToUri()
@@ -54,7 +57,7 @@ public class Translate5Client : BlackBirdRestClient
         var result = new List<T>();
         var url = request.Resource.SetQueryParameter("limit", Limit.ToString());
 
-        var offset = -1;
+        var offset = 0;
         PaginationResponse<T> response;
 
         do
@@ -71,8 +74,45 @@ public class Translate5Client : BlackBirdRestClient
 
     public override async Task<T> ExecuteWithErrorHandling<T>(RestRequest request)
     {
-        var response = await base.ExecuteWithErrorHandling<T>(request);
-        return response;
+        string content = (await ExecuteWithErrorHandling(request)).Content;
+        T val = JsonConvert.DeserializeObject<T>(content, JsonSettings);
+        if (val == null)
+        {
+            throw new Exception($"Could not parse {content} to {typeof(T)}");
+        }
+
+        return val;
+    }
+
+    public override async Task<RestResponse> ExecuteWithErrorHandling(RestRequest request)
+    {
+        int attempt = 0;
+        Exception exception = null;
+
+        while (attempt < MaxRetries)
+        {
+            try
+            {
+                RestResponse restResponse = await ExecuteAsync(request);
+                if (!restResponse.IsSuccessStatusCode)
+                {
+                    throw ConfigureErrorException(restResponse);
+                }
+
+                return restResponse;
+            }
+            catch (HttpRequestException ex)
+            {
+                attempt++;
+                exception = ex;
+                await Task.Delay(RetryDelayMs);
+            }
+            catch (Exception ex)
+            {
+                throw; 
+            }
+        }
+        throw new PluginApplicationException($"Error: {exception.Message} - {exception.InnerException}");
     }
 
     #endregion
