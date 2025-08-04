@@ -11,7 +11,7 @@ namespace Tests.Translate5
         public async Task ExportTranslatedFileReturnsValues()
         {
             var action = new TaskActions(InvocationContext,FileManager);
-            var taskRequest = new TaskRequest { TaskId = "99443" };
+            var taskRequest = new TaskRequest { TaskId = "13275" };
 
             var response = await action.ExportTaskFile(taskRequest);
 
