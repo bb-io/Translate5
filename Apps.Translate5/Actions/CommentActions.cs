@@ -13,13 +13,9 @@ using RestSharp;
 
 namespace Apps.Translate5.Actions;
 
-[ActionList]
-public class CommentActions : Translate5Invocable
+[ActionList("Comments")]
+public class CommentActions(InvocationContext invocationContext) : Translate5Invocable(invocationContext)
 {
-    public CommentActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     [Action("List comments", Description = "List comments for a segment")]
     public async Task<ListCommentsResponse> ListComments([ActionParameter] SegmentRequest input)
     {

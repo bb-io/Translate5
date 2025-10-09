@@ -9,13 +9,9 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
-[ActionList]
-public class UserActions : Translate5Invocable
+[ActionList("Users")]
+public class UserActions(InvocationContext invocationContext) : Translate5Invocable(invocationContext)
 {
-    public UserActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     [Action("List users", Description = "List all users")]
     public async Task<AllUsersResponse> ListAllUsers()
     {
