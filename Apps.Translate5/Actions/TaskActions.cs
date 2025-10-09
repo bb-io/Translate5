@@ -13,20 +13,13 @@ using Apps.Translate5.Models.Response.Tasks;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
-using System.IO;
 using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Translate5.Actions;
 
-[ActionList]
-public class TaskActions : Translate5Invocable
+[ActionList("Tasks")]
+public class TaskActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Translate5Invocable(invocationContext)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-    public TaskActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-
     [Action("List tasks", Description = "List all tasks")]
     public async Task<AllTasksResponse> ListAllTasks()
     {
@@ -62,7 +55,7 @@ public class TaskActions : Translate5Invocable
             AlwaysMultipartFormData = true
         };
 
-        var fileBytes = _fileManagementClient.DownloadAsync(input.File).Result.GetByteData().Result;
+        var fileBytes = fileManagementClient.DownloadAsync(input.File).Result.GetByteData().Result;
         request.AddFile("importUpload", fileBytes, input.FileName ?? input.File.Name);
         parameters
             .Where(x => x.Value is not null)
@@ -115,7 +108,7 @@ public class TaskActions : Translate5Invocable
         }
 
         using var stream = new MemoryStream(response.RawBytes);
-        var file = await _fileManagementClient.UploadAsync(stream, response.ContentType ?? MediaTypeNames.Application.Octet, filename);
+        var file = await fileManagementClient.UploadAsync(stream, response.ContentType ?? MediaTypeNames.Application.Octet, filename);
         return new()
         {
             File = file
@@ -130,7 +123,7 @@ public class TaskActions : Translate5Invocable
 
         foreach (var workfile in input.Workfiles)
         {
-            var fileBytes = _fileManagementClient.DownloadAsync(workfile).Result.GetByteData().Result;
+            var fileBytes = fileManagementClient.DownloadAsync(workfile).Result.GetByteData().Result;
             await archive.AddFileToZip($"workfiles/{workfile.Name}", fileBytes);
         }    
 
@@ -138,11 +131,11 @@ public class TaskActions : Translate5Invocable
         {
             foreach (var image in input.Images)
             {
-                var fileBytes = _fileManagementClient.DownloadAsync(image).Result.GetByteData().Result;
+                var fileBytes = fileManagementClient.DownloadAsync(image).Result.GetByteData().Result;
                 await archive.AddFileToZip($"visual/image/{image.Name}", fileBytes);
             }  
         }
-        var file = await _fileManagementClient.UploadAsync(memoryStream, MediaTypeNames.Application.Zip, "import.zip");
+        var file = await fileManagementClient.UploadAsync(memoryStream, MediaTypeNames.Application.Zip, "import.zip");
         return await CreateTask(new()
         {
             SourceLanguage = input.SourceLanguage,

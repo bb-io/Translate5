@@ -14,13 +14,9 @@ using Blackbird.Applications.Sdk.Common.Invocation;
 
 namespace Apps.Translate5.Actions;
 
-[ActionList]
-public class SegmentActions : Translate5Invocable
+[ActionList("Segments")]
+public class SegmentActions(InvocationContext invocationContext) : Translate5Invocable(invocationContext)
 {
-    public SegmentActions(InvocationContext invocationContext) : base(invocationContext)
-    {
-    }
-
     [Action("List segments", Description = "List segments for a task")]
     public async Task<ListSegmentsResponse> ListSegments([ActionParameter] TaskRequest input)
     {

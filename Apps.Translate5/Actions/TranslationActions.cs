@@ -17,15 +17,9 @@ using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Translate5.Actions;
 
-[ActionList]
-public class TranslationActions : Translate5Invocable
+[ActionList("Translations")]
+public class TranslationActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : Translate5Invocable(invocationContext)
 {
-    private readonly IFileManagementClient _fileManagementClient;
-    public TranslationActions(InvocationContext invocationContext, IFileManagementClient fileManagementClient) : base(invocationContext)
-    {
-        _fileManagementClient = fileManagementClient;
-    }
-
     [Action("Translate text", Description = "Translate text with translate5 language resources")]
     public async Task<TranslationTextDto> TranslateTextInstantly(
         [ActionParameter] TranslateTextInstantlyRequest input)
@@ -73,7 +67,7 @@ public class TranslationActions : Translate5Invocable
         };
 
         parameters.ForEach(x => request.AddParameter(x.Key, x.Value));
-        var fileBytes = _fileManagementClient.DownloadAsync(input.File).Result.GetByteData().Result;
+        var fileBytes = fileManagementClient.DownloadAsync(input.File).Result.GetByteData().Result;
         request.AddFile("file", fileBytes, input.Filename ?? input.File.Name);
 
         var taskId = await Client.ExecuteWithErrorHandling<TaskIdDto>(request);
@@ -90,7 +84,7 @@ public class TranslationActions : Translate5Invocable
                 .First(h => h.Name == "Content-Disposition").Value.ToString()).FileName;
 
         using var stream = new MemoryStream(translatedFileResponse.RawBytes);
-        var file = await _fileManagementClient.UploadAsync(stream, translatedFileResponse.ContentType ?? MediaTypeNames.Application.Octet, filename);
+        var file = await fileManagementClient.UploadAsync(stream, translatedFileResponse.ContentType ?? MediaTypeNames.Application.Octet, filename);
         return new()
         {
             File = file
