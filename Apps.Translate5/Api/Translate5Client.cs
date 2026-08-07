@@ -63,7 +63,14 @@ public class Translate5Client : BlackBirdRestClient
         do
         {
             request.Resource = url.SetQueryParameter("start", offset.ToString());
-            response = await base.ExecuteWithErrorHandling<PaginationResponse<T>>(request);
+            response = await ExecuteWithErrorHandling<PaginationResponse<T>>(request);
+
+            if (response.Rows is null)
+            {
+                throw new PluginApplicationException(
+                    $"Translate5 returned a pagination response without rows for '{request.Resource}'. " +
+                    "Please verify the connection URL, API key, and API response.");
+            }
 
             offset += Limit;
             result.AddRange(response.Rows);
@@ -74,11 +81,21 @@ public class Translate5Client : BlackBirdRestClient
 
     public override async Task<T> ExecuteWithErrorHandling<T>(RestRequest request)
     {
-        string content = (await ExecuteWithErrorHandling(request)).Content;
-        T val = JsonConvert.DeserializeObject<T>(content, JsonSettings);
+        var content = (await ExecuteWithErrorHandling(request)).Content;
+
+        if (string.IsNullOrWhiteSpace(content) ||
+            string.Equals(content.Trim(), "null", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new PluginApplicationException(
+                $"Translate5 returned an empty response for '{request.Resource}'. " +
+                "Please verify that the connection URL points to the Translate5 domain and that the API key is valid.");
+        }
+
+        T? val = JsonConvert.DeserializeObject<T>(content, JsonSettings);
         if (val == null)
         {
-            throw new Exception($"Could not parse {content} to {typeof(T)}");
+            throw new PluginApplicationException(
+                $"Translate5 returned an unexpected response for '{request.Resource}'.");
         }
 
         return val;
