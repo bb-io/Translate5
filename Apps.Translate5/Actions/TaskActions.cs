@@ -13,7 +13,6 @@ using Apps.Translate5.Models.Response.Tasks;
 using Blackbird.Applications.Sdk.Common.Invocation;
 using Blackbird.Applications.SDK.Extensions.FileManagement.Interfaces;
 using Blackbird.Applications.Sdk.Utils.Extensions.Files;
-using Blackbird.Applications.Sdk.Common.Exceptions;
 
 namespace Apps.Translate5.Actions;
 
@@ -95,17 +94,7 @@ public class TaskActions(InvocationContext invocationContext, IFileManagementCli
         var request = new Translate5Request(endpoint, Method.Get, Creds);
 
         var response = await Client.ExecuteWithErrorHandling(request);
-
-        var filenameHeader = response.ContentHeaders.First(h => h.Name == "Content-Disposition");
-        string filename;
-        try
-        {
-            filename = filenameHeader.Value.ToString().Split(';')[2].Split("filename=")[1];
-        }
-        catch (IndexOutOfRangeException ex)
-        {
-            throw new PluginApplicationException("Unexpected format response received from server. Please check the input and try again");
-        }
+        string filename = response.GetFilenameFromDisposition(input.TaskId);
 
         using var stream = new MemoryStream(response.RawBytes);
         var file = await fileManagementClient.UploadAsync(stream, response.ContentType ?? MediaTypeNames.Application.Octet, filename);
